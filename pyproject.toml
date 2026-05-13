@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "certbot-dns-noip"
+version = "0.1.0"
+description = "No-IP DNS Authenticator plugin for Certbot"
+readme = "README.rst"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [
+    { name = "kbussche", email = "kbussche@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Plugins",
+    "Intended Audience :: System Administrators",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Security",
+    "Topic :: System :: Installation/Setup",
+    "Topic :: System :: Networking",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "acme>=2.0.0",
+    "certbot>=2.0.0",
+    "requests>=2.20.0",
+    "setuptools",
+]
+
+[project.optional-dependencies]
+docs = [
+    "Sphinx>=1.0",
+    "sphinx_rtd_theme",
+]
+test = [
+    "pytest",
+    "requests-mock",
+]
+
+[project.entry-points."certbot.plugins"]
+dns-noip = "certbot_dns_noip._internal.dns_noip:Authenticator"
+
+[project.urls]
+Homepage = "https://github.com/kbussche/certbot-dns-noip"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

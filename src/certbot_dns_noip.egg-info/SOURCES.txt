@@ -1,0 +1,14 @@
+MANIFEST.in
+README.rst
+pyproject.toml
+src/certbot_dns_noip/__init__.py
+src/certbot_dns_noip.egg-info/PKG-INFO
+src/certbot_dns_noip.egg-info/SOURCES.txt
+src/certbot_dns_noip.egg-info/dependency_links.txt
+src/certbot_dns_noip.egg-info/entry_points.txt
+src/certbot_dns_noip.egg-info/requires.txt
+src/certbot_dns_noip.egg-info/top_level.txt
+src/certbot_dns_noip/_internal/__init__.py
+src/certbot_dns_noip/_internal/dns_noip.py
+src/certbot_dns_noip/_internal/tests/__init__.py
+src/certbot_dns_noip/_internal/tests/dns_noip_test.py

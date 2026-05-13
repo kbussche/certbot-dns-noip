@@ -1,0 +1,2 @@
+[certbot.plugins]
+dns-noip = certbot_dns_noip._internal.dns_noip:Authenticator
