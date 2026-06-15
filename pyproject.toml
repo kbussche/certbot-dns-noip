@@ -33,7 +33,7 @@ classifiers = [
 dependencies = [
     "acme>=2.0.0",
     "certbot>=2.0.0",
-    "requests>=2.20.0",
+    "requests>=2.31.0",
     "setuptools",
 ]
 

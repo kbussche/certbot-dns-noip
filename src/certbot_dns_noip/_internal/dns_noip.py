@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 
 NOIP_API_BASE = "https://api.noip.com/v1"
 
+# Hard cap on every HTTP call so a hung or unresponsive API endpoint cannot
+# stall certbot indefinitely (connect timeout, read timeout).
+HTTP_TIMEOUT = (10, 30)
+
 
 class Authenticator(dns_common.DNSAuthenticator):
     """DNS Authenticator for No-IP
@@ -70,6 +74,19 @@ class _NoIPClient:
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json',
         })
+        # TLS verification is on by default in requests; assert it explicitly so an
+        # environment/config change can never silently disable it for API traffic that
+        # carries the account API key.
+        self.session.verify = True
+        # Apply a default timeout to every request issued through this session so a
+        # single unresponsive endpoint cannot hang the whole certificate run.
+        _orig_request = self.session.request
+
+        def _request_with_timeout(method: str, url: str, **kwargs: Any) -> requests.Response:
+            kwargs.setdefault('timeout', HTTP_TIMEOUT)
+            return _orig_request(method, url, **kwargs)
+
+        self.session.request = _request_with_timeout  # type: ignore[method-assign]
 
     def add_txt_record(self, domain_name: str, record_name: str, record_content: str,
                        record_ttl: int) -> None:
