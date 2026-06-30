@@ -239,10 +239,11 @@ class _NoIPClient:
 
         try:
             response = self.session.get(f'{NOIP_API_BASE}/dns/zones')
-            if response.status_code == 401:
+            if response.status_code in (401, 403):
                 raise errors.PluginError(
-                    'Error retrieving zones using the No-IP API: authentication failed. '
-                    'Did you provide a valid API key?'
+                    'Error retrieving zones using the No-IP API: authentication failed '
+                    f'(HTTP {response.status_code}). Check that "dns_noip_api_key" in your '
+                    'credentials file is a valid No-IP API token.'
                 )
             response.raise_for_status()
             zone_names = {z['name'] for z in response.json().get('data', [])}
@@ -256,8 +257,21 @@ class _NoIPClient:
                 logger.debug('Found zone for %s using name %s', domain_name, guess)
                 return guess
 
+        if not zone_names:
+            raise errors.PluginError(
+                f'Unable to determine zone for {domain_name}: the No-IP API returned no DNS '
+                'zones for this account. This usually means the API key is valid but belongs '
+                'to a different account (or the account has no domains). Verify that '
+                '"dns_noip_api_key" in your credentials file is the API token for the account '
+                f'that manages {domain_name}.'
+            )
+
         raise errors.PluginError(
-            f'Unable to determine zone for {domain_name} using names: {domain_name_guesses}.'
+            f'Unable to determine zone for {domain_name} (tried: '
+            f'{", ".join(domain_name_guesses)}). It does not match any zone in this No-IP '
+            f'account (available zones: {", ".join(sorted(zone_names))}). Make sure '
+            f'{domain_name} is added to the account, and that "dns_noip_api_key" is the token '
+            'for the correct account.'
         )
 
     @staticmethod
