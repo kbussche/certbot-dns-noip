@@ -1,0 +1,10 @@
+sudo snap install certbot --classic
+sudo snap install --beta certbot-dns-noip
+sudo snap set certbot trust-plugin-with-root=ok
+sudo snap connect certbot:plugin certbot-dns-noip:certbot
+
+
+certbot certonly \
+      --authenticator dns-noip \
+      --dns-noip-credentials /path/to/noip.ini \
+      -d domain.com
