@@ -1,0 +1,18 @@
+# pip constraints for the snap build (referenced by snap/snapcraft.yaml).
+#
+# This file is intentionally minimal: an empty constraints file is valid and
+# pins nothing, which unblocks the build and lets pip resolve dependencies
+# (acme, certbot, requests, ...) normally.
+#
+# For a production snap you generally want the plugin built against the SAME
+# dependency versions as the certbot snap it plugs into (via the content
+# interface), to avoid runtime mismatches. To do that, pin the versions here,
+# e.g.:
+#
+#   acme==2.11.0
+#   certbot==2.11.0
+#   cryptography==42.0.8
+#   requests==2.31.0
+#
+# The canonical set comes from the upstream certbot release you target — see
+# certbot/certbot's snap-constraints.txt for the matching version.
