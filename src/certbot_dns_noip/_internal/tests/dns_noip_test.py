@@ -96,11 +96,32 @@ class NoIPClientTest(unittest.TestCase):
             m.get(f'{NOIP_API_BASE}/dns/zones', json=ZONES_RESPONSE)
             with self.assertRaises(errors.PluginError) as ctx:
                 self.client._find_zone('notmydomain.com')
-        self.assertIn('Unable to determine zone', str(ctx.exception))
+        # The error names the domain and lists the zones the account actually has,
+        # so a wrong-account API key is obvious from the message.
+        msg = str(ctx.exception)
+        self.assertIn('Unable to determine zone', msg)
+        self.assertIn('available zones', msg)
+        self.assertIn('example.com', msg)
+
+    def test_find_zone_empty_account(self) -> None:
+        # Valid key, but the account exposes no zones (typical of a key for the
+        # wrong account) -> message should point at the API key / account.
+        with requests_mock_lib.Mocker() as m:
+            m.get(f'{NOIP_API_BASE}/dns/zones', json={"data": []})
+            with self.assertRaises(errors.PluginError) as ctx:
+                self.client._find_zone(FAKE_ZONE)
+        self.assertIn('different account', str(ctx.exception))
 
     def test_find_zone_auth_failure(self) -> None:
         with requests_mock_lib.Mocker() as m:
             m.get(f'{NOIP_API_BASE}/dns/zones', status_code=401)
+            with self.assertRaises(errors.PluginError) as ctx:
+                self.client._find_zone(FAKE_ZONE)
+        self.assertIn('authentication failed', str(ctx.exception))
+
+    def test_find_zone_forbidden(self) -> None:
+        with requests_mock_lib.Mocker() as m:
+            m.get(f'{NOIP_API_BASE}/dns/zones', status_code=403)
             with self.assertRaises(errors.PluginError) as ctx:
                 self.client._find_zone(FAKE_ZONE)
         self.assertIn('authentication failed', str(ctx.exception))
