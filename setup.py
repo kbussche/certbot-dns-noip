@@ -7,4 +7,6 @@
 # configuration from pyproject.toml, so this needs no arguments.
 from setuptools import setup
 
-setup(version="0.0.1")
+version = '0.0.4'
+
+setup(version=version, name='certbot-dns-noip')
