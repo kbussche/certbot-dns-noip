@@ -33,6 +33,7 @@ class Authenticator(dns_common.DNSAuthenticator):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.credentials: Optional[CredentialsConfiguration] = None
+        self._client: Optional['_NoIPClient'] = None
 
     @classmethod
     def add_parser_arguments(cls, add: Callable[..., None],
@@ -62,7 +63,11 @@ class Authenticator(dns_common.DNSAuthenticator):
     def _get_noip_client(self) -> '_NoIPClient':
         if not self.credentials:  # pragma: no cover
             raise errors.Error("Plugin has not been prepared.")
-        return _NoIPClient(self.credentials.conf('api_key'))
+        # Reuse one client (and its HTTP session/connection pool) across all
+        # perform/cleanup calls instead of building a new session per record.
+        if self._client is None:
+            self._client = _NoIPClient(self.credentials.conf('api_key'))
+        return self._client
 
 
 class _NoIPClient:
@@ -151,7 +156,11 @@ class _NoIPClient:
             return
 
         relative_name = self._compute_record_name(zone_name, record_name)
-        existing = self._get_txt_rdata(zone_name, relative_name)
+        try:
+            existing = self._get_txt_rdata(zone_name, relative_name)
+        except errors.PluginError as e:
+            logger.warning('Error fetching TXT records during cleanup: %s', e)
+            return
 
         if existing is None:
             logger.debug('TXT record %s not found; nothing to delete.', relative_name)
@@ -206,6 +215,12 @@ class _NoIPClient:
         exist or has no TXT rrset.
 
         GET /v1/dns/records/{zone_name}/{name}/rrsets
+
+        Only a 404 means "not found"; any other failure raises, so a transient API error is
+        never mistaken for an absent record (which would cause a bogus create on add, or a
+        silently skipped delete on cleanup).
+
+        :raises certbot.errors.PluginError: if the API request fails.
         """
         try:
             response = self.session.get(
@@ -215,8 +230,9 @@ class _NoIPClient:
                 return None
             response.raise_for_status()
         except requests.RequestException as e:
-            logger.debug('Error fetching rrsets for %s: %s', relative_name, e)
-            return None
+            raise errors.PluginError(
+                f'Error fetching TXT records for {relative_name} using the No-IP API: {e}'
+            )
 
         values: List[str] = [
             rd['value']

@@ -1,10 +1,11 @@
 [build-system]
-requires = ["setuptools"]
+# >=77 is required for the PEP 639 string form of `license` used below.
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "certbot-dns-noip"
-version = "0.1.0"
+version = "0.0.5"
 description = "No-IP DNS Authenticator plugin for Certbot"
 readme = "README.rst"
 license = "Apache-2.0"

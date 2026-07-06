@@ -7,7 +7,6 @@ import requests_mock as requests_mock_lib
 
 from certbot import errors
 from certbot.plugins import dns_test_common
-from certbot.tests import util as test_util
 
 from certbot_dns_noip._internal import dns_noip
 
@@ -164,6 +163,16 @@ class NoIPClientTest(unittest.TestCase):
             result = self.client._get_txt_rdata(FAKE_ZONE, FAKE_RECORD_NAME)
         self.assertIsNone(result)
 
+    def test_get_txt_rdata_api_error(self) -> None:
+        # A non-404 failure must raise, not masquerade as "record not found".
+        with requests_mock_lib.Mocker() as m:
+            m.get(
+                f'{NOIP_API_BASE}/dns/records/{FAKE_ZONE}/{FAKE_RECORD_NAME}/rrsets',
+                status_code=500
+            )
+            with self.assertRaises(errors.PluginError):
+                self.client._get_txt_rdata(FAKE_ZONE, FAKE_RECORD_NAME)
+
     def test_get_txt_rdata_with_values(self) -> None:
         with requests_mock_lib.Mocker() as m:
             m.get(
@@ -314,6 +323,17 @@ class NoIPClientTest(unittest.TestCase):
             m.get(
                 f'{NOIP_API_BASE}/dns/records/{FAKE_ZONE}/{FAKE_RECORD_NAME}/rrsets',
                 status_code=404
+            )
+            # Should not raise
+            self.client.del_txt_record(FAKE_ZONE, FAKE_FULL_RECORD_NAME, FAKE_VALIDATION)
+
+    def test_del_txt_record_rrsets_error_does_not_raise(self) -> None:
+        # Cleanup must never raise: an rrsets API failure is logged and skipped.
+        with requests_mock_lib.Mocker() as m:
+            m.get(f'{NOIP_API_BASE}/dns/zones', json=ZONES_RESPONSE)
+            m.get(
+                f'{NOIP_API_BASE}/dns/records/{FAKE_ZONE}/{FAKE_RECORD_NAME}/rrsets',
+                status_code=500
             )
             # Should not raise
             self.client.del_txt_record(FAKE_ZONE, FAKE_FULL_RECORD_NAME, FAKE_VALIDATION)
