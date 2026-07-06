@@ -1,0 +1,27 @@
+
+# If previously installed
+sudo snap remove certbot-dns-noip
+sudo snap remove certbot
+
+# Install
+sudo snap install certbot --classic
+sudo snap install --beta certbot-dns-noip
+sudo snap set certbot trust-plugin-with-root=ok
+sudo snap connect certbot:plugin certbot-dns-noip:certbot
+
+# Create noip.ini file with this line
+dns_noip_api_key = <amoeba_api_key>
+
+# To Run
+sudo certbot certonly --authenticator dns-noip --dns-noip-credentials ./noip.ini -d yourdomain.org
+
+
+# To build and upload a new version
+
+snapcraft login (use ubuntu one account)
+cd certbot-dns-noip
+snapcraft pack
+
+## The .snap file should now be built.
+
+snapcraft upload --release=beta certbot-dns-noip_0.0.4_amd64.snap
